@@ -1,3 +1,7 @@
 = dm-tyrant-adapter
 
-Description of the adapter.  What data-store is it for, what is that good for?
+A DataMapper adapter for utilizing Tokyo Tyrant, the network API for Tokyo Cabinet.
+
+
+
+

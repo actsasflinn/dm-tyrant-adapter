@@ -1,30 +1,32 @@
 require 'pathname'
 require 'rubygems'
-require 'hoe'
+require 'rake'
+require 'rake/clean'
+require 'rake/packagetask'
+require 'rake/gempackagetask'
+require 'bacon'
 
-ROOT    = Pathname(__FILE__).dirname.expand_path
-JRUBY   = RUBY_PLATFORM =~ /java/
-WINDOWS = Gem.win_platform?
-SUDO    = (WINDOWS || JRUBY) ? '' : ('sudo' unless ENV['SUDOLESS'])
+ROOT = Pathname.pwd
+require ROOT.join(*%w(ext dm-core lib dm-core))
+require ROOT.join(*%w(lib tyrant_adapter version))
 
-require ROOT + 'lib/tyrant_adapter/version'
+WINDOWS = (PLATFORM =~ /win32|cygwin/ ? true : false) rescue false
+SUDO = WINDOWS ? '' : 'sudo'
 
-# define some constants to help with task files
 GEM_NAME    = 'dm-tyrant-adapter'
 GEM_VERSION = DataMapper::TyrantAdapter::VERSION
 
-Hoe.new(GEM_NAME, GEM_VERSION) do |p|
-  p.developer('John Doe', 'john [a] doe [d] com')
-
-  p.description = 'A DataMapper Adapter for ...'
-  p.summary = 'A DataMapper Adapter for ...'
-  p.url = 'http://github.com/USERNAME/dm-tyrant-adapter'
-
-  p.clean_globs |= %w[ log pkg coverage ]
-  p.spec_extras = { :has_rdoc => true, :extra_rdoc_files => %w[ README.txt LICENSE TODO History.txt ] }
-
-  p.extra_deps << [['dm-core', "~> 0.9.10"]]
-
+desc "run the bacon specs"
+task :default => :spec
+task :spec do
+  load ROOT.join(*%w(spec spec.rb))
 end
 
-Pathname.glob(ROOT.join('tasks/**/*.rb').to_s).each { |f| require f }
+load 'dm-tyrant-adapter.gemspec'
+Rake::GemPackageTask.new($gemspec) do |pkg|
+  pkg.gem_spec = $gemspec
+  pkg.need_zip = true
+  pkg.need_tar = true
+end
+
+ROOT.class.glob(ROOT.join(*%w(tasks ** *.rb)).to_s).each { |f| require f }
