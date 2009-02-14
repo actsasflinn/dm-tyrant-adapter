@@ -1,3 +1,9 @@
+require 'rubygems'
+require 'bacon'
+require 'pathname'
+
+# DataMapper.setup(:default, "tyrant://some/uri/here")
+
 DataMapper::Logger.new(nil, :debug)
 
-Dir["#{File.dirname(__FILE__)}/*_spec.rb"].each { |path| load(path) }
+Pathname.glob(Pathname(__FILE__).dirname.join("**/*_spec.rb"))
