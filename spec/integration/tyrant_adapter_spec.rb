@@ -23,7 +23,7 @@ describe DataMapper::Adapters::TyrantAdapter do
   end
 
   it "should successfully save an object" do
-    @heff1.new_record?.should be_false
+    @heff1.new_record?.should == false
   end
   
 end

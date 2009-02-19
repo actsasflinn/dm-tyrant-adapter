@@ -1,6 +1,9 @@
 gem 'dm-core', '~> 0.9.10'
 require 'dm-core'
 
+gem 'uuidtools', '~>1.0.7'
+require 'uuidtools'
+
 module DataMapper
   module Adapters
     # The documentation for this adapter was taken from
@@ -26,7 +29,19 @@ module DataMapper
       #
       # @api semipublic
       def create(resources)
-        raise NotImplementedError
+        resources.each do |resource|
+          # Must have a key
+          resource.id = UUID.random_create.to_s if resource.id.blank?
+
+          model       = resource.model
+          attributes  = resource.attributes
+
+          # keys must be a string
+          hash = attributes.inject({}) {|a, (key, value)| a.update(key.to_s => value) }
+
+          # store the value
+          @model_records[hash['id'].to_s] = hash
+        end.size # just return the number of records
       end
 
       ##
@@ -62,7 +77,7 @@ module DataMapper
       #
       # @api semipublic
       def read_one(query)
-        raise NotImplementedError
+        @model_records[query.conditions.first.last.to_s]
       end
 
       ##
@@ -113,9 +128,10 @@ module DataMapper
       # @api semipublic
       def initialize(name, uri_or_options)
         super
-        @identity_maps = {}
+        host = uri_or_options[:host] || 'localhost'
+        port = uri_or_options[:port] || 1978
+        @model_records = Rufus::Tokyo::TyrantTable.new(host, port)
       end
-
     end
   end
 end

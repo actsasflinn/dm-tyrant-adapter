@@ -7,7 +7,8 @@ require 'rake/gempackagetask'
 require 'bacon'
 
 ROOT = Pathname.pwd
-require ROOT.join(*%w(ext dm-core lib dm-core))
+#require ROOT.join(*%w(ext dm-core lib dm-core))
+require "dm-core"
 require ROOT.join(*%w(lib tyrant_adapter version))
 
 WINDOWS = (PLATFORM =~ /win32|cygwin/ ? true : false) rescue false
