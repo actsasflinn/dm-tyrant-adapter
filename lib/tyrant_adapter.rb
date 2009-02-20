@@ -77,7 +77,10 @@ module DataMapper
       #
       # @api semipublic
       def read_one(query)
-        @model_records[query.conditions.first.last.to_s]
+        result = read(query, query.model, false)
+        query.model.load(query.fields.map do |property|        
+          property.typecast(result[property.field.to_s])
+        end, query)
       end
 
       ##
@@ -93,7 +96,13 @@ module DataMapper
       #
       # @api semipublic
       def read_many(query)
-        raise NotImplementedError
+        Collection.new(query) do |set|
+          read(query, set, true).each do |result|
+            set.load(query.fields.map do |property|        
+              property.typecast(result[property.field.to_s])
+            end)
+          end
+        end
       end
 
       ##
@@ -131,6 +140,51 @@ module DataMapper
         host = uri_or_options[:host] || 'localhost'
         port = uri_or_options[:port] || 1978
         @model_records = Rufus::Tokyo::TyrantTable.new(host, port)
+      end
+
+      def read(query, set, many = true)
+        model      = query.model
+        conditions = query.conditions
+
+        # If the query is for a single id
+        if conditions.size == 1
+          operator, property, bind_value = *conditions.first
+          field = property.field(query.repository.name)
+          return @model_records[bind_value] if field == 'id'
+        end
+
+        result = @model_records.query { |q|
+          conditions.all? do |tuple|
+            operator, property, bind_value = *tuple
+            field = property.field(query.repository.name)
+
+            case operator
+              when :in    then q.add field, :numoreq, bind_value # TODO: this will only work for numbers
+              when :not   then q.add field, operator, bind_value, false
+              when :like  then q.add field, :regex, Regexp.new(bind_value)
+              when :eql, :gt, :gte, :lt, :lte
+                q.add field, operator, bind_value
+              else raise "Invalid query operator: #{operator.inspect}"
+            end
+          end
+
+          # Sort
+          if query.order.any?
+            query.order.map do |order_by|
+              field = order_by.property.field(query.repository.name)
+              q.order_by field, order_by.direction
+            end
+          end
+
+          # Limit
+          if many
+            q.limit(query.limit) if query.limit
+          else
+            q.limit(1)
+          end
+        }
+
+        return result
       end
     end
   end
