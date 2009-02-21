@@ -1,2 +1,4 @@
 * basic specs for connecting through rufus-tokyo
-* basic saving of attributes to a table database record
+* basic saving of attributes to a table database record (figure out what if any type_map is needed)
+* add transaction support (from rufus)
+* use Rufus::Tokyo::TableResultSet for queries (it's the only way to do length properly and I think it'll handle iteration)
