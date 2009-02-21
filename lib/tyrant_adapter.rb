@@ -33,7 +33,6 @@ module DataMapper
           # Must have a key
           resource.id = UUID.random_create.to_s if resource.id.blank?
 
-          model       = resource.model
           attributes  = resource.attributes
 
           # keys must be a string
@@ -60,7 +59,19 @@ module DataMapper
       #
       # @api semipublic
       def update(attributes, query)
-        raise NotImplementedError
+        read_many(query).each do |resource|
+          attributes.each do |property,value|
+            property.set!(resource, value)
+
+            attributes  = resource.attributes
+
+            # keys must be a string
+            hash = attributes.inject({}) {|a, (key, value)| a.update(key.to_s => value) }
+
+            # store the value
+            @model_records[hash['id'].to_s] = hash
+          end
+        end.size # just return the number of records
       end
 
       ##
@@ -77,10 +88,11 @@ module DataMapper
       #
       # @api semipublic
       def read_one(query)
-        result = read(query, query.model, false)
-        query.model.load(query.fields.map do |property|        
-          property.typecast(result[property.field.to_s])
-        end, query)
+        if result = read(query, query.model, false)
+          query.model.load(query.fields.map do |property|        
+            property.typecast(result[property.field.to_s])
+          end, query)
+        end
       end
 
       ##
@@ -116,7 +128,9 @@ module DataMapper
       #
       # @api semipublic
       def delete(query)
-        raise NotImplementedError
+        read_many(query).each do |resource|
+          @model_records.delete(resource.id)
+        end.size
       end
 
       private
@@ -150,7 +164,11 @@ module DataMapper
         if conditions.size == 1
           operator, property, bind_value = *conditions.first
           field = property.field(query.repository.name)
-          return @model_records[bind_value] if field == 'id'
+          if field == 'id'
+            result = @model_records[bind_value]
+            result = [result] if many
+            return result
+          end
         end
 
         result = @model_records.query { |q|
