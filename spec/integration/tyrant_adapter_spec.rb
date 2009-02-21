@@ -58,6 +58,11 @@ describe DataMapper::Adapters::TyrantAdapter do
     ::Heffalump.all(:title => "Purple").should == heffalumps[1]
   end
 
+  it "should successfully find all objects by a regexp" do
+    heffalumps = create_heffalumps
+    ::Heffalump.first(:description.like => "^(.*)three$").should == heffalumps[2]
+  end
+
   # OPTIMIZE: These are probably really poorly written specs
   it "should order by a property when finding objects" do
     heffalumps = create_heffalumps

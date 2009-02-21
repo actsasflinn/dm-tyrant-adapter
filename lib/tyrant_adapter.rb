@@ -173,7 +173,7 @@ module DataMapper
             case operator
               when :in    then q.add field, :numoreq, bind_value # TODO: this will only work for numbers
               when :not   then q.add field, operator, bind_value, false
-              when :like  then q.add field, :regex, Regexp.new(bind_value).to_s
+              when :like  then q.add field, :regex, bind_value
               when :eql, :gt, :gte, :lt, :lte
                 q.add field, operator, bind_value
               else raise "Invalid query operator: #{operator.inspect}"
