@@ -129,7 +129,7 @@ module DataMapper
       # @api semipublic
       def delete(query)
         read_many(query).each do |resource|
-          @model_records.delete(resource.id)
+          @model_records.delete(resource.id.to_s)
         end.size
       end
 
