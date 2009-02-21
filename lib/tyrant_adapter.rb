@@ -33,13 +33,10 @@ module DataMapper
           # Must have a key
           resource.id = UUID.random_create.to_s if resource.id.blank?
 
-          attributes  = resource.attributes
-
-          # keys must be a string
-          hash = attributes.inject({}) {|a, (key, value)| a.update(key.to_s => value) }
+          attributes  = Mash.new(resource.attributes)
 
           # store the value
-          @model_records[hash['id'].to_s] = hash
+          @model_records[attributes['id'].to_s] = attributes
         end.size # just return the number of records
       end
 
@@ -63,13 +60,10 @@ module DataMapper
           attributes.each do |property,value|
             property.set!(resource, value)
 
-            attributes  = resource.attributes
-
-            # keys must be a string
-            hash = attributes.inject({}) {|a, (key, value)| a.update(key.to_s => value) }
+            attributes  = Mash.new(resource.attributes)
 
             # store the value
-            @model_records[hash['id'].to_s] = hash
+            @model_records[attributes['id'].to_s] = attributes
           end
         end.size # just return the number of records
       end
@@ -179,7 +173,7 @@ module DataMapper
             case operator
               when :in    then q.add field, :numoreq, bind_value # TODO: this will only work for numbers
               when :not   then q.add field, operator, bind_value, false
-              when :like  then q.add field, :regex, Regexp.new(bind_value)
+              when :like  then q.add field, :regex, Regexp.new(bind_value).to_s
               when :eql, :gt, :gte, :lt, :lte
                 q.add field, operator, bind_value
               else raise "Invalid query operator: #{operator.inspect}"
@@ -202,6 +196,7 @@ module DataMapper
           end
         }
 
+        result = result.first unless many
         return result
       end
     end
